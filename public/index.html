@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -528,7 +529,7 @@
 
         <div class="composer-help">
           <span>Enter your name so people know who's speaking.</span>
-          <span>Live chat · No history saved</span>
+          <span>Live chat · Message history saved</span>
         </div>
       </div>
     </section>
@@ -545,31 +546,7 @@
     const messages = document.getElementById("messages");
     const status = document.getElementById("status");
 
-    socket.on("connect", () => {
-      status.textContent = "Connected";
-      status.classList.remove("offline");
-    });
-
-    socket.on("disconnect", () => {
-      status.textContent = "Reconnecting…";
-      status.classList.add("offline");
-    });
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-
-      const name = nameInput.value.trim();
-      const text = messageInput.value.trim();
-
-      if (!name || !text || !socket.connected) return;
-
-      socket.emit("chat message", { name, text });
-
-      messageInput.value = "";
-      messageInput.focus();
-    });
-
-    socket.on("chat message", (data) => {
+    function displayMessage(data) {
       const item = document.createElement("li");
       const meta = document.createElement("div");
       const text = document.createElement("div");
@@ -584,9 +561,51 @@
 
       item.appendChild(meta);
       item.appendChild(text);
-
       messages.appendChild(item);
+    }
+
+    socket.on("connect", () => {
+      status.textContent = "Connected";
+      status.classList.remove("offline");
+    });
+
+    socket.on("disconnect", () => {
+      status.textContent = "Reconnecting…";
+      status.classList.add("offline");
+    });
+
+    socket.on("chat history", (history) => {
+      messages.replaceChildren();
+      history.forEach(displayMessage);
       messages.scrollTop = messages.scrollHeight;
+    });
+
+    socket.on("chat message", (data) => {
+      displayMessage(data);
+      messages.scrollTop = messages.scrollHeight;
+    });
+
+    socket.on("chat error", (data) => {
+      alert(data.message || "Your message could not be saved.");
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const name = nameInput.value.trim();
+      const text = messageInput.value.trim();
+
+      if (!name || !text) return;
+
+      if (!socket.connected) {
+        alert("Not connected to the server. Please wait.");
+        return;
+      }
+
+      socket.emit("chat message", { name, text });
+
+      messageInput.value = "";
+      messageInput.focus();
     });
   </script>
 </body>
