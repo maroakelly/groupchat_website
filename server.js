@@ -1,4 +1,3 @@
-```javascript
 const express = require("express");
 const http = require("http");
 const path = require("path");
@@ -6,25 +5,18 @@ const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: true
-  }
-});
+const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 
-// Serve the website files from the public folder.
+// Serve the website
 app.use(express.static(path.join(__dirname, "public")));
 
-// Handle incoming chat connections.
+// Handle chat connections
 io.on("connection", (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  console.log("User connected: " + socket.id);
 
-  // Receive and broadcast chat messages.
   socket.on("chat message", (data) => {
-    // Validate incoming data.
     if (
       !data ||
       typeof data.name !== "string" ||
@@ -33,33 +25,29 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // Clean and limit message content.
     const name = data.name.trim().slice(0, 30);
     const text = data.text.trim().slice(0, 500);
 
-    // Ignore empty messages.
     if (!name || !text) {
       return;
     }
 
-    // Send the message to everyone connected, including the sender.
+    // Broadcast the message to everyone
     io.emit("chat message", {
-      name,
-      text,
+      name: name,
+      text: text,
       time: new Date().toLocaleTimeString()
     });
 
-    console.log(`${name}: ${text}`);
+    console.log(name + ": " + text);
   });
 
-  // Handle disconnections.
   socket.on("disconnect", () => {
-    console.log(`User disconnected: ${socket.id}`);
+    console.log("User disconnected: " + socket.id);
   });
 });
 
-// Start the server.
+// Start server
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Group Chat website running on port ${PORT}`);
+  console.log("Group Chat website running on port " + PORT);
 });
-```
